@@ -1,0 +1,17 @@
+day,day_of_week,time_h_m,total_minutes,type
+1,Sunday,5:14,314,Weekend
+2,Monday,7:54,474,Weekday
+3,Tuesday,7:32,452,Weekday
+4,Wednesday,8:39,519,Weekday
+5,Thursday,9:21,561,Weekday
+6,Friday,6:26,386,Weekday
+7,Saturday,6:32,392,Weekend
+8,Sunday,4:03,243,Weekend
+9,Monday,11:30,690,Weekday
+10,Tuesday,14:53,893,Weekday
+11,Wednesday,12:48,768,Weekday
+12,Thursday,9:07,547,Weekday
+13,Friday,3:59,239,Weekday
+14,Saturday,3:23,203,Weekend
+15,Saturday,6:07,367,Weekend
+16,Sunday,4:41,281,Weekend
