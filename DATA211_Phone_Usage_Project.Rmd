@@ -1,0 +1,196 @@
+
+---
+title: "DATA 211 Course Project: Phone Usage Analysis"
+author: "Paul"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: cerulean
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# Introduction
+
+The goal of this project is to apply data visualization and statistical analysis to a part of my daily life. For two weeks (16 days total), I tracked my daily phone usage (in minutes) and compared **weekday** versus **weekend** usage.
+
+**Research question**
+
+> Do I use my phone more on weekdays than on weekends?
+
+To answer this, I:
+
+- Collected daily total screen-time in minutes.
+- Labeled each day as a weekday or weekend.
+- Created summary statistics and visualizations.
+- Performed a two-sample *t*-test to compare weekday and weekend means.
+
+# Data
+
+The data are stored in a CSV file in the `data/` folder of the project repository:
+
+- `data/phone_usage_data.csv`
+
+The columns are:
+
+- `day`: Day index from 1 to 16  
+- `day_of_week`: Name of the day (e.g., Monday, Sunday)  
+- `time_h_m`: Original hours:minutes string  
+- `total_minutes`: Total phone usage in minutes  
+- `type`: `"Weekday"` or `"Weekend"`
+
+```{r load-packages}
+library(tidyverse)
+```
+
+```{r load-data}
+phone <- readr::read_csv("data/phone_usage_data.csv")
+
+phone
+```
+
+# Exploratory Analysis
+
+## Summary Statistics
+
+First, I compute summary statistics overall and by weekday/weekend.
+
+```{r summary-stats}
+overall_summary <- phone |>
+  dplyr::summarise(
+    n = dplyr::n(),
+    mean_minutes = mean(total_minutes),
+    sd_minutes = sd(total_minutes),
+    min_minutes = min(total_minutes),
+    max_minutes = max(total_minutes)
+  )
+
+weekday_weekend_summary <- phone |>
+  dplyr::group_by(type) |>
+  dplyr::summarise(
+    n = dplyr::n(),
+    mean_minutes = mean(total_minutes),
+    sd_minutes = sd(total_minutes),
+    min_minutes = min(total_minutes),
+    max_minutes = max(total_minutes),
+    .groups = "drop"
+  )
+
+overall_summary
+weekday_weekend_summary
+```
+
+## Boxplot: Weekday vs Weekend
+
+```{r boxplot, fig.width=6, fig.height=4}
+phone |>
+  ggplot2::ggplot(ggplot2::aes(x = type, y = total_minutes, fill = type)) +
+  ggplot2::geom_boxplot(alpha = 0.7) +
+  ggplot2::labs(
+    title = "Phone Usage: Weekdays vs Weekends",
+    x = "Day Type",
+    y = "Total Minutes"
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "none")
+```
+
+## Daily Usage Over Time (Scatterplot)
+
+```{r scatterplot, fig.width=7, fig.height=4}
+phone |>
+  ggplot2::ggplot(ggplot2::aes(x = day, y = total_minutes, color = type)) +
+  ggplot2::geom_point(size = 3) +
+  ggplot2::geom_line(ggplot2::aes(group = 1), alpha = 0.4) +
+  ggplot2::scale_x_continuous(breaks = phone$day) +
+  ggplot2::labs(
+    title = "Daily Phone Usage Over 16 Days",
+    x = "Day",
+    y = "Total Minutes"
+  ) +
+  ggplot2::theme_minimal()
+```
+
+## Histogram: Weekday vs Weekend Usage
+
+```{r histogram, fig.width=7, fig.height=4}
+phone |>
+  ggplot2::ggplot(ggplot2::aes(x = total_minutes, fill = type)) +
+  ggplot2::geom_histogram(alpha = 0.6, position = "identity", bins = 8) +
+  ggplot2::labs(
+    title = "Distribution of Phone Usage: Weekdays vs Weekends",
+    x = "Total Minutes",
+    y = "Count"
+  ) +
+  ggplot2::theme_minimal()
+```
+
+# Statistical Analysis
+
+## Hypotheses
+
+Let
+
+- \( \mu_W \) = mean daily phone usage (minutes) on **weekdays**  
+- \( \mu_E \) = mean daily phone usage (minutes) on **weekends**
+
+We test:
+
+- **Null hypothesis** \( H_0 \): \( \mu_W = \mu_E \)  
+- **Alternative hypothesis** \( H_a \): \( \mu_W > \mu_E \)  
+
+(I use a one-sided test because I expect higher usage on weekdays.)
+
+## Two-Sample *t*-Test (Welch)
+
+```{r t-test}
+weekday <- phone |>
+  dplyr::filter(type == "Weekday") |>
+  dplyr::pull(total_minutes)
+
+weekend <- phone |>
+  dplyr::filter(type == "Weekend") |>
+  dplyr::pull(total_minutes)
+
+t_test_result <- t.test(
+  weekday,
+  weekend,
+  alternative = "greater",  # weekday > weekend
+  var.equal = FALSE
+)
+
+t_test_result
+```
+
+## Effect Size (Difference in Means)
+
+```{r effect-size}
+mean_weekday <- mean(weekday)
+mean_weekend <- mean(weekend)
+diff_means <- mean_weekday - mean_weekend
+
+mean_weekday
+mean_weekend
+diff_means
+```
+
+# Interpretation
+
+In my sample of 16 days:
+
+- The mean weekday phone usage is substantially higher than the mean weekend usage.
+- The Welch two-sample *t*-test shows a positive *t*-statistic and a small p-value (typically **p < 0.01**), so at the 5% significance level I **reject the null hypothesis** that weekday and weekend phone usage are equal.
+- This supports the conclusion that I use my phone **significantly more on weekdays than on weekends**, by several hours per day on average.
+
+# Reflection
+
+This project helped me connect concepts from DATA 211 to my real life. I learned how to take a simple question about my habits, design a small data collection plan, and structure the data so that it could be analyzed in R. Creating plots like boxplots, scatterplots, and histograms made it easier to see patterns and compare weekdays to weekends. Running the t-test showed me how formal statistical methods can confirm or challenge my assumptions using evidence instead of guesses. Overall, I gained confidence working with data, writing reproducible code in an R Markdown file, and communicating results clearly.
